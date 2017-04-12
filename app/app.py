@@ -6,17 +6,18 @@ import math
 LIGHT_GREY = (240,240,245)
 
 class Canvas(pygame.sprite.Sprite):
-    def __init__(self, size, window, grid=(32, 32), image=None, preview=None):
+    def __init__(self, size, window, grid=(32, 32), image=None, preview=None, colour=None, file_=None):
        pygame.sprite.Sprite.__init__(self)
        self.x, self.y = size
        self.grid = grid
+       self.file_=file_
        self.window = window
        self.grid_array = [[tuple((0,0,0,0)) for i in range(grid[0])] for j in range(grid[1])]
        self.image = pygame.Surface([self.x + 5, self.y + 5], pygame.SRCALPHA, 32) if image is None else image
        self.preview = pygame.Surface(self.grid, pygame.SRCALPHA, 32) if preview is None else preview
        self.x_gap = int(self.x / grid[0])
        self.y_gap = int(self.y / grid[1])
-       self.colour = (0, 255, 0,100)
+       self.colour = (0, 0, 0, 100) if not colour else colour
        self.rubber = (0, 0, 0, 0)
        self.draw()
 
@@ -177,7 +178,8 @@ class Spriter(object):
           [self.width/2, self.height/2],
           self.screen,
           image=self.canvas.image.copy(),
-          preview=self.canvas.preview.copy()
+          preview=self.canvas.preview.copy(),
+          colour=self.colour
        )
        self.canvas.kill()
        self.canvas = tmp
@@ -188,7 +190,8 @@ class Spriter(object):
        self.canvas.kill()
        self.canvas = Canvas(
           [self.width/2, self.height/2],
-          self.screen
+          self.screen,
+          colour=self.colour
        )
        self.default_sprites.add(self.canvas)
        self.frames.append(self.canvas)
@@ -201,6 +204,7 @@ class Spriter(object):
           return None 
        self.canvas.kill()
        self.canvas = tmp
+       self.canvas.colour = self.colour
        self.default_sprites.add(self.canvas)
 
     def __init__(self):
@@ -221,6 +225,7 @@ class Spriter(object):
        self.wheel = Wheel(self.width/2)
        self.default_sprites = Default()
        self.default_sprites.add(self.canvas, self.wheel)
+       self.colour = (0,0,0,100)
        pygame.time.set_timer(31, 100)
        while self.running:
           self.screen.fill(LIGHT_GREY)
@@ -268,6 +273,7 @@ class Spriter(object):
           c = self.wheel.brush(self.draw, self.rubber, pygame.mouse.get_pos())
           if c:
              self.canvas.colour = c
+             self.colour = c
           self.default_sprites.draw(self.screen)      
           
           if self.canvas_pointer >= len(self.frames):
