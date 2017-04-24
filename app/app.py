@@ -8,11 +8,10 @@ import math
 LIGHT_GREY = (240,240,245)
 
 class Canvas(pygame.sprite.Sprite):
-    def __init__(self, size, window, grid=(32, 32), image=None, preview=None, colour=None, file_=None):
+    def __init__(self, size, window, grid=(32, 32), image=None, preview=None, colour=None):
        pygame.sprite.Sprite.__init__(self)
        self.x, self.y = size
        self.grid = grid
-       self.file_=file_
        self.window = window
        self.grid_array = [[tuple((0,0,0,0)) for i in range(grid[0])] for j in range(grid[1])]
        self.image = pygame.Surface([self.x + 5, self.y + 5], pygame.SRCALPHA, 32) if image is None else image
@@ -22,6 +21,7 @@ class Canvas(pygame.sprite.Sprite):
        self.colour = (0, 0, 0, 100) if not colour else colour
        self.rubber = (0, 0, 0, 0)
        self.draw()
+       
 
     def draw(self,color=(0,0,0)):   
        for j in range( self.grid[0] +1):
@@ -209,21 +209,48 @@ class Spriter(object):
        self.canvas.colour = self.colour
        self.default_sprites.add(self.canvas)
 
-    def __init__(self):
+    def save(self):
+       if not self.directory:
+          self.directory = ''.join([choice(ascii_letters) for _ in range(3)])
+          os.makedirs(self.directory)
+       for im in range(len(self.frames)):
+           pygame.image.save(self.frames[im].preview, "{}/{}.tga".format(self.directory, im))
+           pygame.image.save(self.frames[im].image, "{}/{}-canvas.tga".format(self.directory, im))
+    
+    def load(self):
+       _, m, files = [_ for _ in os.walk(self.directory)][0]
+       for i in range(len(files)/2):
+          preview = pygame.image.load("{}/{}.tga".format(self.directory,i))
+          canvas = pygame.image.load("{}/{}-canvas.tga".format(self.directory,i)) 
+          tmp = Canvas(
+                [self.width/2, self.height/2],
+                self.screen,
+                preview=preview,
+                image=canvas
+                )
+          self.frames.append(tmp)
+          self.canvas = tmp 
+
+    def __init__(self, directory=None):
        pygame.init()
        self.width = 1024
        self.height = 768
+       self.directory = directory
        self.screen = pygame.display.set_mode((self.width, self.height), DOUBLEBUF)
        self.running = True
        self.draw = False
        self.rubber = False
        self.clock = pygame.time.Clock() 
        self.canvas_pointer = 0
-       self.canvas = Canvas(
-               [self.width/2, self.height/2],
-               self.screen
-               )
-       self.frames = [self.canvas]
+       self.frames = []
+       if not self.directory:
+          self.canvas = Canvas(
+                  [self.width/2, self.height/2],
+                  self.screen
+                  )
+          self.frames.append(self.canvas)
+       else:
+          self.load()
        self.wheel = Wheel(self.width/2)
        self.default_sprites = Default()
        self.default_sprites.add(self.canvas, self.wheel)
@@ -253,11 +280,7 @@ class Spriter(object):
                             }        
                     self.select_frame(self.number_dict[event.key])
                 if event.key==K_s:
-                    random_path = ''.join([choice(ascii_letters) for _ in range(3)])
-                    os.makedirs(random_path)
-                    for im in range(len(self.frames)):
-                        pygame.image.save(self.frames[im].preview, "{}/{}.tga".format(random_path, im))
-                        pygame.image.save(self.frames[im].image, "{}/{}-canvas.tga".format(random_path, im))
+                   self.save()
              if event.type==31:
                 self.canvas_pointer +=1       
              if event.type==QUIT:
@@ -287,13 +310,18 @@ class Spriter(object):
           pygame.display.flip()
           self.default_sprites.update()
           self.clock.tick(30)
+       print "python app.py",self.directory
 
 
 
 
 
 def main():
-   my_game = Spriter()
+   import sys
+   if len(sys.argv) > 1:
+      my_game = Spriter(directory=sys.argv[1])   
+   else:
+      my_game = Spriter()
    
 if __name__ == "__main__":
     main()
