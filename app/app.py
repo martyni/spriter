@@ -1,4 +1,5 @@
 import pygame
+import sys
 import os
 from string import ascii_letters
 from copy import deepcopy, copy
@@ -86,16 +87,17 @@ class Default(pygame.sprite.Group):
     pass
 
 class Wheel(pygame.sprite.Sprite):
-    def __init__(self, size):
+    def __init__(self, size, center=0):
         self.size = size
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.Surface([self.size, self.size], pygame.SRCALPHA, 32)
         self.quarter_size = int(size /4 )
+        col =  255  
         for i in range(self.quarter_size):
             for j in range(self.quarter_size):
-                normalized_i = int(float(i)/self.quarter_size * 255)
-                normalized_j = int(float(j)/self.quarter_size * 255)
-                color = (255 - normalized_i ,255 - normalized_j, 0)
+                normalized_i = int(float(i)/self.quarter_size * col)
+                normalized_j = int(float(j)/self.quarter_size * col)
+                color = (col - normalized_i ,col - normalized_j, center)
                 pygame.draw.line(
                         self.image,
                         color,
@@ -104,9 +106,9 @@ class Wheel(pygame.sprite.Sprite):
                 )
         for i in range(self.quarter_size):
             for j in range(self.quarter_size):
-                normalized_i = int(float(i)/self.quarter_size * 255)
-                normalized_j = int(float(j)/self.quarter_size * 255)
-                color = ( 255 - normalized_i ,0 , normalized_j)
+                normalized_i = int(float(i)/self.quarter_size * col)
+                normalized_j = int(float(j)/self.quarter_size * col)
+                color = ( col - normalized_i , center , normalized_j)
                 pygame.draw.line(
                         self.image,
                         color,
@@ -115,15 +117,32 @@ class Wheel(pygame.sprite.Sprite):
                 )
         for i in range(self.quarter_size):
             for j in range(self.quarter_size):
-                normalized_i = int(float(i)/self.quarter_size * 255)
-                normalized_j = int(float(j)/self.quarter_size * 255)
-                color = ( 0 ,normalized_i , normalized_j)
+                normalized_i = int(float(i)/self.quarter_size * col)
+                normalized_j = int(float(j)/self.quarter_size * col)
+                color = ( center ,normalized_i , normalized_j)
                 pygame.draw.line(
                         self.image,
                         color,
                         (i + self.quarter_size, j + self.quarter_size),
                         (i + self.quarter_size, j + self.quarter_size)
                 )
+        for i in range(self.quarter_size):
+            for j in range(self.quarter_size):
+                normalized_i = int(float(i)/self.quarter_size * col) 
+                normalized_j = int(float(j)/self.quarter_size * col)
+                color = [ 
+                          int((normalized_i + normalized_j) /2) , 
+                          int((normalized_i + normalized_j) /2),
+                          int((normalized_i + normalized_j) /2)
+                        ]
+                print color
+                pygame.draw.line(
+                        self.image,
+                        color,
+                        (i + self.quarter_size, self.quarter_size - j),
+                        (i + self.quarter_size, self.quarter_size - j  )
+                )
+                
         self.rect =  self.image.get_rect()
         self.rect.x = self.size 
         self.colour = (0,0,0,255)
@@ -211,13 +230,15 @@ class Spriter(object):
 
     def save(self):
        if not self.directory:
-          self.directory = ''.join([choice(ascii_letters) for _ in range(3)])
+          self.directory = os.path.expanduser('~/') + ''.join([choice(ascii_letters) for _ in range(3)])
           os.makedirs(self.directory)
        for im in range(len(self.frames)):
            pygame.image.save(self.frames[im].preview, "{}/{}.tga".format(self.directory, im))
            pygame.image.save(self.frames[im].image, "{}/{}-canvas.tga".format(self.directory, im))
     
     def load(self):
+       print os.path.expanduser(self.directory)
+       print [_ for _ in os.walk(self.directory)]
        _, m, files = [_ for _ in os.walk(self.directory)][0]
        for i in range(len(files)/2):
           preview = pygame.image.load("{}/{}.tga".format(self.directory,i))
@@ -251,7 +272,7 @@ class Spriter(object):
           self.frames.append(self.canvas)
        else:
           self.load()
-       self.wheel = Wheel(self.width/2)
+       self.wheel = Wheel(self.width/2, 0)
        self.default_sprites = Default()
        self.default_sprites.add(self.canvas, self.wheel)
        self.colour = (0,0,0,100)
@@ -310,14 +331,13 @@ class Spriter(object):
           pygame.display.flip()
           self.default_sprites.update()
           self.clock.tick(30)
-       print "python app.py",self.directory
+       print "python" , sys.argv[0],self.directory
 
 
 
 
 
 def main():
-   import sys
    if len(sys.argv) > 1:
       my_game = Spriter(directory=sys.argv[1])   
    else:
