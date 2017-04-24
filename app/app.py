@@ -1,7 +1,9 @@
 import pygame
+import os
+from string import ascii_letters
 from copy import deepcopy, copy
 from pygame.locals import *
-from random import randint
+from random import randint, choice
 import math
 LIGHT_GREY = (240,240,245)
 
@@ -251,8 +253,11 @@ class Spriter(object):
                             }        
                     self.select_frame(self.number_dict[event.key])
                 if event.key==K_s:
+                    random_path = ''.join([choice(ascii_letters) for _ in range(3)])
+                    os.makedirs(random_path)
                     for im in range(len(self.frames)):
-                        pygame.image.save(self.frames[im].preview, "{}.tga".format(im))
+                        pygame.image.save(self.frames[im].preview, "{}/{}.tga".format(random_path, im))
+                        pygame.image.save(self.frames[im].image, "{}/{}-canvas.tga".format(random_path, im))
              if event.type==31:
                 self.canvas_pointer +=1       
              if event.type==QUIT:
